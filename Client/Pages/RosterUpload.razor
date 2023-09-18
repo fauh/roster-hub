@@ -1,0 +1,75 @@
+﻿@page "/roster/upload"
+@using BlazorApp.Shared
+@using System.Text.Json;
+@inject IHttpClientFactory ClientFactory
+<div class="card p-4">
+    <h4 class="card-title">Add Roster</h4>
+    <hr />
+    <EditForm Model="@roster">  
+        <div class="form-group row p-2">
+            <div class="col-md-6">
+                <input type="text" class="form-control" placeholder="Name" @bind-value="emp.Name" />
+            </div>
+            <div class="col-md-6">
+                <input type="text" class="form-control" placeholder="Country" @bind-value="emp.Country" />
+            </div>
+        </div>
+        <div class="form-group row p-2">
+            <div class="col-md-6">
+                <input type="text" class="form-control" placeholder="City" @bind-value="emp.City" />
+            </div>
+            <div class="col-md-6">
+                <input type="text" class="form-control" placeholder="Department" @bind-value="emp.Department" />
+            </div>
+        </div>
+        <div class="form-group row p-2">
+            <div class="col-md-6">
+                <input type="text" class="form-control" placeholder="Designation" @bind-value="emp.Designation" />
+            </div>
+        </div>
+        <div class="form-group row p-2">
+            <div class="text-center">
+                <button class="btn btn-primary" @onclick="@(async () => await AddRecord())">Add Employee</button>
+
+            </div>
+        </div>
+    </EditForm>
+</div>
+<div class="mt-4">
+    <FetchData employees="@rosters" />
+</div>
+@code {
+
+    private Roster roster = new Roster();
+    private IEnumerable<Roster>? rosters = Array.Empty<Roster>();
+    private bool getBranchesError;
+    private bool shouldRender;  
+
+    protected override bool ShouldRender() => shouldRender;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get,
+            "https://api.github.com/repos/dotnet/AspNetCore.Docs/branches");
+        request.Headers.Add("Accept", "application/vnd.github.v3+json");
+        request.Headers.Add("User-Agent", "HttpClientFactory-Sample");
+
+        var client = ClientFactory.CreateClient();
+
+        var response = await client.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+            branches = await JsonSerializer.DeserializeAsync
+                <IEnumerable<GitHubBranch>>(responseStream);
+        }
+        else
+        {
+            getBranchesError = true;
+        }
+
+        shouldRender = true;
+    }
+    }
+}
